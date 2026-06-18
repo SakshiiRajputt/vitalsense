@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VitalSense · Health Prediction</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<!-- Header -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <span class="brand-icon">⬡</span>
+      <span class="brand-name">VitalSense</span>
+    </div>
+    <p class="brand-tagline">AI-powered health risk assessment</p>
+    <button class="btn btn-primary" id="openAddModal">+ New Patient</button>
+  </div>
+</header>
+
+<!-- Stats Bar -->
+<section class="stats-bar" id="statsBar">
+  <div class="stat"><span class="stat-value" id="statTotal">—</span><span class="stat-label">Total Patients</span></div>
+  <div class="stat-sep"></div>
+  <div class="stat"><span class="stat-value" id="statHigh">—</span><span class="stat-label">High Risk</span></div>
+  <div class="stat-sep"></div>
+  <div class="stat"><span class="stat-value" id="statModerate">—</span><span class="stat-label">Moderate Risk</span></div>
+  <div class="stat-sep"></div>
+  <div class="stat"><span class="stat-value" id="statLow">—</span><span class="stat-label">Low Risk</span></div>
+</section>
+
+<!-- Search -->
+<section class="search-bar-wrap">
+  <div class="search-inner">
+    <input type="text" id="searchInput" class="search-input" placeholder="Search by name or email…" />
+    <span class="search-icon">⌕</span>
+  </div>
+</section>
+
+<!-- Patient Table -->
+<main class="main-content">
+  <div class="table-wrap">
+    <div id="loadingState" class="empty-state">
+      <span class="spinner"></span>
+      <p>Loading patients…</p>
+    </div>
+    <div id="emptyState" class="empty-state" style="display:none">
+      <p class="empty-icon">🩺</p>
+      <p>No patients yet. Add the first record to get started.</p>
+    </div>
+    <table class="patient-table" id="patientTable" style="display:none">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Patient</th>
+          <th>Date of Birth</th>
+          <th>Glucose <small>mg/dL</small></th>
+          <th>Haemoglobin <small>g/dL</small></th>
+          <th>Cholesterol <small>mg/dL</small></th>
+          <th>AI Remarks</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="patientBody"></tbody>
+    </table>
+  </div>
+</main>
+
+<!-- Add / Edit Modal -->
+<div class="modal-overlay" id="formModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">New Patient</h2>
+      <button class="modal-close" id="closeFormModal" aria-label="Close">✕</button>
+    </div>
+    <div id="formErrors" class="form-errors" style="display:none"></div>
+
+    <form id="patientForm" novalidate>
+      <input type="hidden" id="patientId" />
+
+      <div class="form-grid">
+        <div class="field full">
+          <label for="full_name">Full Name</label>
+          <input type="text" id="full_name" name="full_name" placeholder="Jane Doe" required />
+        </div>
+
+        <div class="field">
+          <label for="date_of_birth">Date of Birth</label>
+          <input type="date" id="date_of_birth" name="date_of_birth" required />
+        </div>
+
+        <div class="field">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" placeholder="jane@example.com" required />
+        </div>
+
+        <div class="field">
+          <label for="glucose">Glucose <span class="unit">mg/dL</span></label>
+          <input type="number" id="glucose" name="glucose" placeholder="90" step="0.1" min="0.1" required />
+        </div>
+
+        <div class="field">
+          <label for="haemoglobin">Haemoglobin <span class="unit">g/dL</span></label>
+          <input type="number" id="haemoglobin" name="haemoglobin" placeholder="14.5" step="0.1" min="0.1" required />
+        </div>
+
+        <div class="field">
+          <label for="cholesterol">Cholesterol <span class="unit">mg/dL</span></label>
+          <input type="number" id="cholesterol" name="cholesterol" placeholder="190" step="0.1" min="0.1" required />
+        </div>
+
+        <div class="field full ai-note">
+          <span class="ai-badge">⬡ AI</span>
+          Health remarks will be generated automatically after saving.
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="cancelForm">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="saveBtn">
+          <span id="saveBtnText">Save Patient</span>
+          <span id="saveBtnSpinner" class="btn-spinner" style="display:none"></span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Remarks Detail Modal -->
+<div class="modal-overlay" id="remarksModal" role="dialog" aria-modal="true">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>AI Health Assessment</h2>
+      <button class="modal-close" id="closeRemarksModal">✕</button>
+    </div>
+    <div class="remarks-body" id="remarksBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="closeRemarksBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="deleteModal" role="dialog" aria-modal="true">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Delete Patient</h2>
+      <button class="modal-close" id="closeDeleteModal">✕</button>
+    </div>
+    <p class="delete-msg">Are you sure you want to permanently delete <strong id="deletePatientName"></strong>? This action cannot be undone.</p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="cancelDelete">Cancel</button>
+      <button class="btn btn-danger" id="confirmDelete">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast" role="alert" aria-live="polite"></div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>
